@@ -15,11 +15,9 @@ for file in file_list:
     df = pd.read_excel(file)
     filename = os.path.basename(file)
     
-    # 自動辨識學期
-    if '114-1' in filename:
-        semester = '114-1'
-    elif '114-2' in filename:
-        semester = '114-2'
+    # 自動辨識學期，只保留學年度 114
+    if '114' in filename:
+        semester = '114'
     else:
         semester = '未知'
         
