@@ -10,7 +10,7 @@
 ## 二、 資料清理與轉化技術 (Data Cleaning & Pipeline)
 
 1. **自動化路徑與檔案合併 (Automation)：**
-   - 使用 `glob` 與 `pandas` 批量讀取 `data/` 目錄下之所有 Excel 檔。
+   - 使用 `glob`與 `pandas` 批量讀取 `data/` 目錄下之所有 Excel 檔。
    - 解析檔名動態生成 `學期` 與 `班級` 結構化標籤。
 
 2. **資料型態轉換 (Data Type Conversion)：**
