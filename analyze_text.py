@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-# 1. 建立 4 個班級 (505, 506, 507, 510) 的學生學習反思文本數據
+# 1. 建立 4 個班級 (505, 506, 507, 510) 每班 29 人的學生學習反思文本數據
 classes = ['505', '506', '507', '510']
 sample_reflections = [
     '這篇閱讀文章非常有意思，我覺得做答題目很有挑戰性，收穫很多！',
@@ -18,7 +18,7 @@ sample_reflections = [
 
 records = []
 for c in classes:
-  for i in range(1, 11):
+  for i in range(1, 30):  # 修改為 1~29，產生每班 29 位學生 (S01~S29)
     student_id = f'{c}_S{i:02d}'
     text = sample_reflections[(i - 1) % len(sample_reflections)]
     records.append({'student_id': student_id, 'class': c, 'reflection': text})
@@ -43,14 +43,14 @@ def analyze_sentiment(text):
 
 df['sentiment'] = df['reflection'].apply(analyze_sentiment)
 
-# 3. 匯出完整 4 個班級的文本分析結果
+# 3. 匯出完整 4 個班級 (116 筆) 的文本分析結果
 os.makedirs('data', exist_ok=True)
 output_path = 'data/text_analysis_result.csv'
 df.to_csv(output_path, index=False, encoding='utf-8-sig')
 
 print('--- 第 13 週文本分析執行完成 ---')
 print(
-    f'✅ 已完成 4 個班級 ({", ".join(classes)}) 共 {len(df)} 筆學生反思分析'
+    f'✅ 已完成 4 個班級 ({", ".join(classes)}) 每班 29 人，共 {len(df)} 筆學生反思分析'
 )
 print('\n各班級資料筆數：')
 print(df['class'].value_counts().sort_index())
