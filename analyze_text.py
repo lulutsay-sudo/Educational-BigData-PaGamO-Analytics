@@ -18,7 +18,7 @@ sample_reflections = [
 
 records = []
 for c in classes:
-  for i in range(1, 30):  # 修改為 1~29，產生每班 29 位學生 (S01~S29)
+  for i in range(1, 30):
     student_id = f'{c}_S{i:02d}'
     text = sample_reflections[(i - 1) % len(sample_reflections)]
     records.append({'student_id': student_id, 'class': c, 'reflection': text})
@@ -43,17 +43,21 @@ def analyze_sentiment(text):
 
 df['sentiment'] = df['reflection'].apply(analyze_sentiment)
 
-# 3. 匯出完整 4 個班級 (116 筆) 的文本分析結果
+# 3. 匯出資料集：包含「全校匯總檔」與「各班獨立檔」
 os.makedirs('data', exist_ok=True)
-output_path = 'data/text_analysis_result.csv'
-df.to_csv(output_path, index=False, encoding='utf-8-sig')
 
-print('--- 第 13 週文本分析執行完成 ---')
-print(
-    f'✅ 已完成 4 個班級 ({", ".join(classes)}) 每班 29 人，共 {len(df)} 筆學生反思分析'
-)
-print('\n各班級資料筆數：')
-print(df['class'].value_counts().sort_index())
-print('\n正負向情緒分布統計：')
-print(df['sentiment'].value_counts())
-print(f'\n✅ 結果已更新並儲存至：{output_path}')
+# (A) 匯出全校 4 班匯合資料 (共 116 筆)
+master_output_path = 'data/text_analysis_result.csv'
+df.to_csv(master_output_path, index=False, encoding='utf-8-sig')
+
+# (B) 循環匯出各班獨立資料 (每班 29 筆)
+for c in classes:
+  class_df = df[df['class'] == c]
+  class_output_path = f'data/text_analysis_{c}.csv'
+  class_df.to_csv(class_output_path, index=False, encoding='utf-8-sig')
+
+print('--- 第 13 週文本分析匯出完成 ---')
+print(f'✅ 全校匯總資料（共 {len(df)} 筆）已儲存至：{master_output_path}')
+print('✅ 各班獨立資料已成功儲存：')
+for c in classes:
+  print(f'   - data/text_analysis_{c}.csv (29 筆)')
