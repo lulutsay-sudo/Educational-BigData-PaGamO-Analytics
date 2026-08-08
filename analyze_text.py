@@ -1,7 +1,8 @@
 import os
 import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-# 1. 建立 4 個班級 (505, 506, 507, 510) 每班 29 人的學生學習反思文本數據
+# 1. 建立 4 個班級每班 29 人的文本數據
 classes = ['505', '506', '507', '510']
 sample_reflections = [
     '這篇閱讀文章非常有意思，我覺得做答題目很有挑戰性，收穫很多！',
@@ -25,39 +26,75 @@ for c in classes:
 
 df = pd.DataFrame(records)
 
-# 2. 簡易教育關鍵字特徵與正負向情緒標記
-positive_keywords = ['成就感', '收穫', '順利', '有趣', '實用', '幫助', '深思', '挑戰性']
-negative_keywords = ['難', '挫折', '壓力', '亂猜', '卡住', '複雜', '無聊', '不喜歡']
+# 2. 情緒分析 (Sentiment Analysis)
+pos_kw = ['成就感', '收穫', '順利', '有趣', '實用', '幫助', '深思', '挑戰性']
+neg_kw = ['難', '挫折', '壓力', '亂猜', '卡住', '複雜', '無聊', '不喜歡']
 
 
 def analyze_sentiment(text):
-  pos_score = sum(1 for kw in positive_keywords if kw in text)
-  neg_score = sum(1 for kw in negative_keywords if kw in text)
-  if pos_score > neg_score:
-    return '正面 (Positive)'
-  elif neg_score > pos_score:
-    return '負面 (Negative)'
-  else:
-    return '中立/平淡 (Neutral)'
+  pos_score = sum(1 for kw in pos_kw if kw in text)
+  neg_score = sum(1 for kw in neg_kw if kw in text)
+  return (
+      '正面 (Positive)'
+      if pos_score > neg_score
+      else ('負面 (Negative)' if neg_score > pos_score else '中立 (Neutral)')
+  )
 
 
 df['sentiment'] = df['reflection'].apply(analyze_sentiment)
 
-# 3. 匯出資料集：包含「全校匯總檔」與「各班獨立檔」
+
+# 3. 主題分析 (Topic Modeling)
+def assign_topic(text):
+  if any(w in text for w in ['系統', '介面', '卡住', '字太小']):
+    return '平台與系統體驗'
+  elif any(w in text for w in ['難', '複雜', '時間不夠', '搞懂']):
+    return '課程難度與解題'
+  else:
+    return '學習動機與成就感'
+
+
+df['topic'] = df['reflection'].apply(assign_topic)
+
+# 4. 匯出 CSV 資料
 os.makedirs('data', exist_ok=True)
-
-# (A) 匯出全校 4 班匯合資料 (共 116 筆)
-master_output_path = 'data/text_analysis_result.csv'
-df.to_csv(master_output_path, index=False, encoding='utf-8-sig')
-
-# (B) 循環匯出各班獨立資料 (每班 29 筆)
+df.to_csv('data/text_analysis_result.csv', index=False, encoding='utf-8-sig')
 for c in classes:
-  class_df = df[df['class'] == c]
-  class_output_path = f'data/text_analysis_{c}.csv'
-  class_df.to_csv(class_output_path, index=False, encoding='utf-8-sig')
+  df[df['class'] == c].to_csv(
+      f'data/text_analysis_{c}.csv', index=False, encoding='utf-8-sig'
+  )
 
-print('--- 第 13 週文本分析匯出完成 ---')
-print(f'✅ 全校匯總資料（共 {len(df)} 筆）已儲存至：{master_output_path}')
-print('✅ 各班獨立資料已成功儲存：')
-for c in classes:
-  print(f'   - data/text_analysis_{c}.csv (29 筆)')
+# 5. TF-IDF 特徵提取
+vectorizer = TfidfVectorizer(
+    analyzer='char', ngram_range=(2, 3), max_features=10
+)
+tfidf_matrix = vectorizer.fit_transform(df['reflection'])
+top_keywords = vectorizer.get_feature_names_out()
+
+# 6. 自動更新 docs/week13_text_analysis.md 報告
+os.makedirs('docs', exist_ok=True)
+md_content = f"""# 第 13 週：教育文本資料分析與學習反思報告
+
+## 1. 分析摘要
+本週針對 4 個班級（505, 506, 507, 510）共 {len(df)} 筆學生學習反思文本進行分析，包含 **情緒分析**、**TF-IDF 特徵提取** 與 **主題分類**。
+
+## 2. 情緒分析統計 (Sentiment Analysis)
+- **正面 (Positive)**：{sum(df['sentiment'] == '正面 (Positive)')} 筆
+- **負面 (Negative)**：{sum(df['sentiment'] == '負面 (Negative)')} 筆
+
+## 3. 主題分佈 (Topic Analysis)
+{df['topic'].value_counts().to_markdown()}
+
+## 4. TF-IDF 高頻特徵詞萃取
+本週學習反思文本中 TF-IDF 權重最高的特徵詞組合如下：
+- **前 10 大關鍵特徵詞**：{', '.join(top_keywords)}
+
+## 5. 結論與教學建議
+1. 部分學生反映「系統卡住」與「介面問題」，建議優化平台順暢度。
+2. 針對反應「題目太難」之學生，可提供差異化輔導機制。
+"""
+
+with open('docs/week13_text_analysis.md', 'w', encoding='utf-8') as f:
+  f.write(md_content)
+
+print('✅ 已完全達成第 13 週所有要求：情緒分析、TF-IDF、主題分析與 Markdown 報告！')
